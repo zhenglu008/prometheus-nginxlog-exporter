@@ -371,6 +371,9 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.
 	}
 
 	for line := range t.Lines() {
+
+		var notCounterValues []string
+
 		if nsCfg.PrintLog {
 			fmt.Println(line)
 		}
@@ -388,10 +391,12 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.
 				if err == nil {
 					labelValues[i+relabelLabelOffset] = mapped
 				}
+				if mapped == "" {
+					goto nextLine
+				}
 			}
 		}
 
-		var notCounterValues []string
 		if hasCounterOnlyLabels {
 			notCounterValues = relabeling.StripOnlyCounterValues(labelValues, relabelings)
 		} else {
@@ -417,6 +422,8 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.
 			metrics.responseSeconds.WithLabelValues(notCounterValues...).Observe(responseTime)
 			metrics.responseSecondsHist.WithLabelValues(notCounterValues...).Observe(responseTime)
 		}
+
+		nextLine:
 	}
 }
 

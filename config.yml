@@ -1,0 +1,37 @@
+listen:
+  port: 6053
+  metrics_endpoint: "/metrics"
+
+consul:
+  enable: false
+  address: "localhost:8500"
+  datacenter: dc1
+  scheme: http
+  token: ""
+  service:
+    id: "nginx-exporter"
+    name: "nginx-exporter"
+    address: "192.168.3.1"
+    tags: ["foo", "bar"]
+
+namespaces:
+  - name: kong
+    format: "{\"@timestamp\":\"$time_iso8601\",\"@version\":\"1\",\"client_ip\":\"$remote_addr\",\"server_ip\":\"$server_addr\",\"request_method\":\"$request_method\",\"domain\":\"$host\",\"url\":\"$uri\",\"scheme\":\"$scheme\",\"http_host\":\"$http_host\",\"request_uri\":\"$request_uri\",\"status\":\"$status\",\"size_bytes\":$body_bytes_sent,\"http_referer\":\"$http_referer\",\"http_x_forwarded_for\":\"$http_x_forwarded_for\",\"http_version\":\"$server_protocol\",\"user_agent\":\"$http_user_agent\",\"response_time\":$request_time,\"upstream_response_time\":$upstream_response_time,\"upstream_addr\":\"$upstream_addr\",\"upstream_status\":\"$upstream_status\",\"upstream_cache_status\":\"$upstream_cache_status\"}"
+    source:
+      files:
+        - /tmp/access.log
+    relabel_configs:
+      - target_label: request_uri
+        from: "request_uri"
+        split: 1
+        separator: "?"
+        exclude: [".css", ".js", ".html"]
+      - target_label: host
+        from: "host"
+      - target_label: status
+        from: "status"
+      - target_label: remote_addr
+        from: "remote_addr"
+      - target_label: http_user_agent
+        from: "http_user_agent"
+    histogram_buckets: [.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10]

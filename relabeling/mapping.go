@@ -30,6 +30,12 @@ func (r *Relabeling) Map(sourceValue string) (string, error) {
 		return "other", nil
 	}
 
+	for _, exclude := range r.Exclude {
+		if strings.Contains(sourceValue, exclude) {
+			return "", nil
+		}
+	}
+
 	if len(r.Matches) > 0 {
 		replacement := ""
 		for i := range r.Matches {
