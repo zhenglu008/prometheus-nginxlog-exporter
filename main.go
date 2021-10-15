@@ -59,6 +59,7 @@ func NewNSMetrics(cfg *config.NamespaceConfig) *NSMetrics {
 	m.registry.MustRegister(m.responseSeconds)
 	m.registry.MustRegister(m.responseSecondsHist)
 	m.registry.MustRegister(m.parseErrorsTotal)
+	m.registry.MustRegister(m.requestDevice)
 	return m
 }
 
@@ -73,6 +74,7 @@ type Metrics struct {
 	responseSeconds     *prometheus.SummaryVec
 	responseSecondsHist *prometheus.HistogramVec
 	parseErrorsTotal    prometheus.Counter
+	requestDevice       *prometheus.CounterVec
 }
 
 func inLabels(label string, labels []string) bool {
@@ -98,21 +100,19 @@ func (m *Metrics) Init(cfg *config.NamespaceConfig) {
 		counterLabels = append(counterLabels, cfg.RelabelConfigs[i].TargetLabel)
 	}
 
-	for _, r := range relabeling.DefaultRelabelings {
-		if !inLabels(r.TargetLabel, labels) {
-			labels = append(labels, r.TargetLabel)
-		}
-		if !inLabels(r.TargetLabel, counterLabels) {
-			counterLabels = append(counterLabels, r.TargetLabel)
-		}
-	}
-
 	m.countTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace:   cfg.NamespacePrefix,
 		ConstLabels: cfg.NamespaceLabels,
 		Name:        "http_response_count_total",
 		Help:        "Amount of processed HTTP requests",
 	}, counterLabels)
+
+	m.requestDevice = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace:   cfg.NamespacePrefix,
+		ConstLabels: cfg.NamespaceLabels,
+		Name:        "http_request_device",
+		Help:        "User Agent Parse",
+	}, relabeling.UserAgentLables)
 
 	m.responseBytesTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace:   cfg.NamespacePrefix,
@@ -356,8 +356,8 @@ func processNamespace(nsCfg config.NamespaceConfig, metrics *Metrics) {
 }
 
 func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.Parser, metrics *Metrics, hasCounterOnlyLabels bool) {
+
 	relabelings := relabeling.NewRelabelings(nsCfg.RelabelConfigs)
-	relabelings = append(relabelings, relabeling.DefaultRelabelings...)
 	relabelings = relabeling.UniqueRelabelings(relabelings)
 
 	staticLabelValues := nsCfg.OrderedLabelValues
@@ -371,8 +371,6 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.
 	}
 
 	for line := range t.Lines() {
-
-		var notCounterValues []string
 
 		if nsCfg.PrintLog {
 			fmt.Println(line)
@@ -397,30 +395,10 @@ func processSource(nsCfg config.NamespaceConfig, t tail.Follower, parser parser.
 			}
 		}
 
-		if hasCounterOnlyLabels {
-			notCounterValues = relabeling.StripOnlyCounterValues(labelValues, relabelings)
-		} else {
-			notCounterValues = labelValues
-		}
-
 		metrics.countTotal.WithLabelValues(labelValues...).Inc()
 
-		if bytes, ok := floatFromFields(fields, "body_bytes_sent"); ok {
-			metrics.responseBytesTotal.WithLabelValues(notCounterValues...).Add(bytes)
-		}
-
-		if bytes, ok := floatFromFields(fields, "request_length"); ok {
-			metrics.requestBytesTotal.WithLabelValues(notCounterValues...).Add(bytes)
-		}
-
-		if upstreamTime, ok := floatFromFields(fields, "upstream_response_time"); ok {
-			metrics.upstreamSeconds.WithLabelValues(notCounterValues...).Observe(upstreamTime)
-			metrics.upstreamSecondsHist.WithLabelValues(notCounterValues...).Observe(upstreamTime)
-		}
-
-		if responseTime, ok := floatFromFields(fields, "request_time"); ok {
-			metrics.responseSeconds.WithLabelValues(notCounterValues...).Observe(responseTime)
-			metrics.responseSecondsHist.WithLabelValues(notCounterValues...).Observe(responseTime)
+		if userAgent, ok := fields["http_user_agent"]; ok {
+			metrics.requestDevice.WithLabelValues(relabeling.Parse(userAgent)...).Inc()
 		}
 
 		nextLine:

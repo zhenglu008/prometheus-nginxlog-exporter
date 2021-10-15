@@ -32,6 +32,4 @@ namespaces:
         from: "status"
       - target_label: remote_addr
         from: "remote_addr"
-      - target_label: http_user_agent
-        from: "http_user_agent"
     histogram_buckets: [.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10]

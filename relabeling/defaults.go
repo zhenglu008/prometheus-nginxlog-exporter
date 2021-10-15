@@ -32,3 +32,8 @@ var DefaultRelabelings = []*Relabeling{
 		},
 	},
 }
+
+
+var UserAgentLables = []string{
+	"os", "platform", "device_type",
+}
