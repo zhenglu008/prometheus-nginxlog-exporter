@@ -52,12 +52,6 @@ func NewNSMetrics(cfg *config.NamespaceConfig) *NSMetrics {
 	m.Init(cfg)
 
 	m.registry.MustRegister(m.countTotal)
-	m.registry.MustRegister(m.requestBytesTotal)
-	m.registry.MustRegister(m.responseBytesTotal)
-	m.registry.MustRegister(m.upstreamSeconds)
-	m.registry.MustRegister(m.upstreamSecondsHist)
-	m.registry.MustRegister(m.responseSeconds)
-	m.registry.MustRegister(m.responseSecondsHist)
 	m.registry.MustRegister(m.parseErrorsTotal)
 	m.registry.MustRegister(m.requestDevice)
 	return m
@@ -67,12 +61,6 @@ func NewNSMetrics(cfg *config.NamespaceConfig) *NSMetrics {
 // exposed to Prometheus
 type Metrics struct {
 	countTotal          *prometheus.CounterVec
-	responseBytesTotal  *prometheus.CounterVec
-	requestBytesTotal   *prometheus.CounterVec
-	upstreamSeconds     *prometheus.SummaryVec
-	upstreamSecondsHist *prometheus.HistogramVec
-	responseSeconds     *prometheus.SummaryVec
-	responseSecondsHist *prometheus.HistogramVec
 	parseErrorsTotal    prometheus.Counter
 	requestDevice       *prometheus.CounterVec
 }
@@ -113,52 +101,6 @@ func (m *Metrics) Init(cfg *config.NamespaceConfig) {
 		Name:        "http_request_device",
 		Help:        "User Agent Parse",
 	}, relabeling.UserAgentLables)
-
-	m.responseBytesTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_response_size_bytes",
-		Help:        "Total amount of transferred bytes",
-	}, labels)
-
-	m.requestBytesTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_request_size_bytes",
-		Help:        "Total amount of received bytes",
-	}, labels)
-
-	m.upstreamSeconds = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_upstream_time_seconds",
-		Help:        "Time needed by upstream servers to handle requests",
-		Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	}, labels)
-
-	m.upstreamSecondsHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_upstream_time_seconds_hist",
-		Help:        "Time needed by upstream servers to handle requests",
-		Buckets:     cfg.HistogramBuckets,
-	}, labels)
-
-	m.responseSeconds = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_response_time_seconds",
-		Help:        "Time needed by NGINX to handle requests",
-		Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	}, labels)
-
-	m.responseSecondsHist = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace:   cfg.NamespacePrefix,
-		ConstLabels: cfg.NamespaceLabels,
-		Name:        "http_response_time_seconds_hist",
-		Help:        "Time needed by NGINX to handle requests",
-		Buckets:     cfg.HistogramBuckets,
-	}, labels)
 
 	m.parseErrorsTotal = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace:   cfg.NamespacePrefix,
