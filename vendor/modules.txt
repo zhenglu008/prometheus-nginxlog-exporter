@@ -54,7 +54,7 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/mapstructure v1.3.3
 github.com/mitchellh/mapstructure
-# github.com/mssola/user_agent v0.5.3
+# github.com/mssola/user_agent v0.5.3 => github.com/zhenglu008/user_agent v0.5.4
 github.com/mssola/user_agent
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib

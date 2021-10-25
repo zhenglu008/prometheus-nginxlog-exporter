@@ -1,5 +1,7 @@
 module github.com/martin-helmich/prometheus-nginxlog-exporter
 
+go 1.13
+
 require (
 	github.com/armon/go-metrics v0.3.4 // indirect
 	github.com/avct/uasurfer v0.0.0-20191028135549-26b5daa857f1 // indirect
@@ -22,4 +24,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-go 1.13
+replace github.com/mssola/user_agent v0.5.3 => github.com/zhenglu008/user_agent v0.5.4

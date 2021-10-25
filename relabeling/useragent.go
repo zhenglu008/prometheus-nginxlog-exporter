@@ -7,9 +7,6 @@ import (
 func Parse(userAgent string) []string {
 	var result []string
 	ua := user_agent.New(userAgent)
-	engine, _ := ua.Engine()
-	result = append(result, ua.OS())
-	result = append(result, ua.Platform())
-	result = append(result, engine)
+	result = append(result, ua.Model())
 	return result
 }
